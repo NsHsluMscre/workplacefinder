@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorkplaceFinder — Occupancy, Health &amp; Flows</title>
+  <meta name="description" content="Interaktives Belegungs-Dashboard auf Etagenebene: Arbeitsplatzauslastung, Gesundheitsrisiko, Toilettennutzung, Abteilungen und anonyme Bewegungsflüsse. Demo mit fiktiven Daten.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23EB0000'/%3E%3Crect x='8' y='8' width='7' height='7' fill='%23fff'/%3E%3Crect x='17' y='8' width='7' height='7' fill='%23fff'/%3E%3Crect x='8' y='17' width='7' height='7' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top">WPF</a>
+    <div class="site-title">WorkplaceFinder</div>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menu">Menu</button>
+  </header>
+
+  <nav class="menu-overlay" id="menu" hidden>
+    <ol>
+      <li><a href="#floorplan"><span>01</span>Floor Plan</a></li>
+      <li><a href="#compare"><span>02</span>Standortvergleich</a></li>
+      <li><a href="#flows"><span>03</span>Movement Flows</a></li>
+      <li><a href="#method"><span>04</span>Methodik &amp; Datenschutz</a></li>
+    </ol>
+  </nav>
+
+  <main id="top">
+    <section class="intro">
+      <p class="lede">Nicht jeder Arbeitsplatz wird gleich genutzt. WorkplaceFinder macht Belegung, lange Sitzphasen, Sanitärnutzung und Bewegungsmuster auf Etagenebene sichtbar – sensorbasiert, anonym und aggregiert. So werden aus Belegungsdaten bessere Entscheidungen für <u>Arbeitsumgebung</u>, Gesundheit und Facility Management.</p>
+    </section>
+
+    <!-- ============ 01 FLOOR PLAN ============ -->
+    <section class="toolbar" aria-label="Ansicht">
+      <div class="toolbar-group"><span class="tool-label">Standort</span><div id="buildingButtons"></div></div>
+      <div class="toolbar-group"><span class="tool-label">Zeitraum</span><div id="periodButtons"></div></div>
+    </section>
+
+    <section class="dashboard" id="floorplan">
+      <aside class="filters" aria-label="Filter">
+        <h2 class="side-title">Filter</h2>
+        <ul class="mode-list" id="modeList"></ul>
+
+        <div class="param param--risk">
+          <label for="thr">Schwelle Sitzphase <b id="thrVal">6 h</b></label>
+          <input type="range" id="thr" min="3" max="9" step="0.5" value="6">
+          <small>Durchgehende Präsenz ohne Pause, ab der ein Platz als Risiko gilt.</small>
+        </div>
+
+        <div class="param param--wc">
+          <span class="param-label">WC-Zeitfenster</span>
+          <div class="time-range"><select id="wcFrom" aria-label="von"></select><span>–</span><select id="wcTo" aria-label="bis"></select></div>
+          <label for="wcEvery">Reinigung alle <b id="wcEveryVal">25</b> Eintritte</label>
+          <input type="range" id="wcEvery" min="10" max="80" step="5" value="25">
+        </div>
+
+        <div class="param param--dept is-active">
+          <span class="param-label">Abteilung hervorheben</span>
+          <ul class="dept-list" id="deptList"></ul>
+        </div>
+      </aside>
+
+      <div class="stage">
+        <div class="floor-select">
+          <span class="floor-label">Etage wählen</span>
+          <div id="floorButtons" class="floor-buttons"></div>
+          <span class="clock" id="clock"></span>
+        </div>
+        <div class="map-card">
+          <div class="map-head" id="mapTitle"></div>
+          <div class="map" id="floorMap"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+        <p class="caption" id="caption"></p>
+      </div>
+
+      <aside class="insights" id="insights" aria-label="Kennzahlen"></aside>
+    </section>
+
+    <!-- ============ 02 COMPARE ============ -->
+    <section class="section" id="compare">
+      <div class="section-head">
+        <h2><span>02</span>Standortvergleich</h2>
+        <p>Gleiche Nutzergruppen, unterschiedliche Layouts: Wie nutzen Abteilungen die Fläche an verschiedenen Standorten – und wo ist der (fiktive) Produktivitätsindex höher? Daraus entstehen testbare Hypothesen für Layout-Anpassungen.</p>
+      </div>
+      <div class="compare-grid">
+        <div class="layout-facts" id="layoutFacts"></div>
+        <div class="table-wrap"><table class="data-table" id="compareTable"></table></div>
+      </div>
+      <ul class="insight-list" id="compareInsights"></ul>
+    </section>
+
+    <!-- ============ 03 FLOWS ============ -->
+    <section class="section" id="flows">
+      <div class="section-head">
+        <h2><span>03</span>Movement Flows</h2>
+        <p>Sensor an Tisch 48 geht aus, eine Minute später geht der Sensor in Besprechungsraum 3 an – vermutlich ein Wechsel. Aggregiert über viele Ereignisse entstehen Bewegungsmuster, ohne einzelne Mitarbeitende zu verfolgen.</p>
+      </div>
+
+      <div class="toolbar toolbar--inner">
+        <div class="toolbar-group"><span class="tool-label">Methode</span>
+          <div><button class="tool-btn" data-fmethod="mac">MAC-Abgleich</button><button class="tool-btn" data-fmethod="est">Schätzung</button></div>
+        </div>
+        <div class="toolbar-group"><button class="play-btn" data-fplay>▶ Tagesverlauf abspielen</button></div>
+      </div>
+
+      <div class="dashboard dashboard--flows">
+        <aside class="filters">
+          <h2 class="side-title">Parameter</h2>
+          <div class="param is-active">
+            <label for="fHour">Zeit <b id="fHourVal">Ganzer Tag</b></label>
+            <input type="range" id="fHour" min="7" max="17" step="1" value="7">
+            <small>Ganz links = ganzer Tag</small>
+          </div>
+          <div class="param is-active fparam--window">
+            <label for="fWindow">Zuordnungsfenster <b id="fWindowVal">2 min</b></label>
+            <input type="range" id="fWindow" min="15" max="300" step="15" value="120">
+            <small>Max. Zeit zwischen „Sensor aus“ und „Sensor an“ (nur Schätzung).</small>
+          </div>
+          <div class="param is-active">
+            <label for="fK">Mindestgrösse Fluss <b id="fKVal">≥ 5</b></label>
+            <input type="range" id="fK" min="1" max="15" step="1" value="5">
+            <small>k-Anonymität: kleinere Flüsse werden ausgeblendet.</small>
+          </div>
+          <div class="method-note">
+            <p><b>MAC-Abgleich:</b> Docking-Station bzw. WLAN sieht die täglich wechselnde, gehashte MAC-Adresse des Laptops an beiden Orten → sicherer Link, kein Personenbezug über den Tag hinaus.</p>
+            <p><b>Schätzung:</b> Nur Sensorereignisse. Wahrscheinlichkeit aus Zeitabstand und Distanz.</p>
+          </div>
+        </aside>
+
+        <div class="stage">
+          <div class="map-card">
+            <div class="map-head" id="flowTitle"></div>
+            <div class="map" id="flowMap"></div>
+            <div class="legend" id="flowLegend"></div>
+          </div>
+          <div class="flow-lower">
+            <div class="panel">
+              <h3>Übergangsmatrix</h3>
+              <div class="table-wrap"><table class="matrix" id="flowMatrix"></table></div>
+            </div>
+            <div class="panel">
+              <h3>Prognose Besprechungsräume</h3>
+              <div id="flowForecast"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="insights">
+          <div id="flowKpis"></div>
+          <div class="kpi kpi--list"><span class="kpi-label">Ereignis-Log</span><ul class="feed" id="flowFeed"></ul></div>
+        </aside>
+      </div>
+      <div class="patterns">
+        <h3>Erkannte Muster</h3>
+        <ul class="insight-list" id="flowPatterns"></ul>
+      </div>
+    </section>
+
+    <!-- ============ 04 METHOD ============ -->
+    <section class="section" id="method">
+      <div class="section-head">
+        <h2><span>04</span>Methodik &amp; Datenschutz</h2>
+      </div>
+      <div class="method-grid">
+        <div><h3>Arbeitsplätze</h3><p>Infrarot-Präsenzsensoren (z. B. Elsys EMS Desk) melden Belegung pro Tisch. Aus der Ereigniskette werden Belegungsstunden, Auslastung (Bezugszeit 08–18 Uhr) und die längste Sitzphase ohne Unterbrechung abgeleitet.</p></div>
+        <div><h3>Gesundheitsrisiko</h3><p>Plätze, die regelmässig über der Schwelle durchgehend besetzt sind, werden markiert. Ausgewertet wird nur pro Platz bzw. Abteilung – Grundlage für gezielte Angebote der betrieblichen Gesundheitsförderung am Jahresende.</p></div>
+        <div><h3>Toiletten</h3><p>Ein Personenzähler über der Tür (z. B. TeraBee) zählt Eintritte. Nach jeweils N Eintritten wird das Reinigungsteam benachrichtigt – bedarfsorientiert statt nach starrem Plan.</p></div>
+        <div><h3>Bewegungsflüsse</h3><p>Täglich rotierende, gehashte MAC-Adressen oder reine Sensor-Korrelation. Ausgabe nur aggregiert ab k Ereignissen pro Fluss; keine Speicherung von Identitäten. Einbezug von Datenschutz und Sozialpartnern vorausgesetzt.</p></div>
+      </div>
+      <p class="disclaimer">Demo- und Studienprojekt (MSc Real Estate, HSLU). Alle Werte sind fiktiv und zufällig generiert. Inspiriert vom WorkplaceFinder aus dem Gastreferat „From Occupancy Data to Better Workplace Decisions“; kein offizielles Produkt.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>WorkplaceFinder Demo</span>
+    <span>Fiktive Daten · Seeded Random</span>
+    <a href="#top">Nach oben ↑</a>
+  </footer>
+
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+
+  <script src="data.js"></script>
+  <script src="floorplan.js"></script>
+  <script src="app.js"></script>
+  <script src="flows.js"></script>
+</body>
+</html>
